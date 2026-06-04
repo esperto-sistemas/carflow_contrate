@@ -20,26 +20,41 @@ const paymentMethods = [
 
 const onlyNumbers = (value) => value.replace(/\D/g, "");
 
+function formatCpf(numbers) {
+  return numbers
+    .slice(0, 11)
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4");
+}
+
+function formatCnpj(numbers) {
+  return numbers
+    .slice(0, 14)
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4")
+    .replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5");
+}
+
 function mask(value, type) {
   const numbers = onlyNumbers(value);
 
-  if (type === "cep") return numbers.slice(0, 8).replace(/(\d{5})(\d{0,3})/, "$1-$2").replace(/-$/, "");
-  if (type === "phone") return numbers.slice(0, 11).replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").replace(/-$/, "");
+  if (type === "cep") return numbers.slice(0, 8).replace(/^(\d{5})(\d{1,3})?/, (_, first, rest = "") => (rest ? `${first}-${rest}` : first));
+  if (type === "phone") {
+    const sliced = numbers.slice(0, 11);
+    if (sliced.length <= 2) return `(${sliced}`;
+    if (sliced.length <= 6) return `(${sliced.slice(0, 2)}) ${sliced.slice(2)}`;
+    if (sliced.length <= 10) return `(${sliced.slice(0, 2)}) ${sliced.slice(2, 6)}-${sliced.slice(6)}`;
+    return `(${sliced.slice(0, 2)}) ${sliced.slice(2, 7)}-${sliced.slice(7)}`;
+  }
   if (type === "card") return numbers.slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
   if (type === "validade") return numbers.slice(0, 6).replace(/(\d{2})(\d{0,4})/, "$1/$2").replace(/\/$/, "");
   if (type === "cvv") return numbers.slice(0, 4);
-  if (type === "cpf") {
-    return numbers
-      .slice(0, 11)
-      .replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, "$1.$2.$3-$4")
-      .replace(/[.-]$/, "");
-  }
+  if (type === "cpf") return formatCpf(numbers);
   if (type === "cpfCnpj") {
-    if (numbers.length <= 11) return mask(numbers, "cpf");
-    return numbers
-      .slice(0, 14)
-      .replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, "$1.$2.$3/$4-$5")
-      .replace(/[./-]$/, "");
+    if (numbers.length <= 11) return formatCpf(numbers);
+    return formatCnpj(numbers);
   }
 
   return value;
@@ -86,6 +101,19 @@ function TextInput({ error, ...props }) {
   );
 }
 
+function Spinner({ className = "" }) {
+  return (
+    <svg className={`animate-spin text-primary-600 ${className}`} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path
+        className="opacity-90"
+        fill="currentColor"
+        d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 1 0-6 6v4a10 10 0 0 1 0-20Z"
+      />
+    </svg>
+  );
+}
+
 export default function App() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
@@ -96,6 +124,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [copied, setCopied] = useState(false);
+  const isCityLocked = cityLoading || cepLoading;
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.value === form.plano) || plans[0],
@@ -126,34 +155,38 @@ export default function App() {
     }
   }
 
-  async function handleCepBlur() {
+  useEffect(() => {
     const cep = onlyNumbers(form.cep);
-    if (cep.length !== 8) return;
+    if (cep.length !== 8) return undefined;
 
-    setCepLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/site/cep/${cep}`, { headers: HEADERS });
-      const payload = await response.json();
-      const address = payload.data;
+    const timeout = setTimeout(async () => {
+      setCepLoading(true);
+      try {
+        const response = await fetch(`${API_URL}/site/cep/${cep}`, { headers: HEADERS });
+        const payload = await response.json();
+        const address = payload.data;
 
-      if (!address) return;
+        if (!address) return;
 
-      const foundCities = await searchCities(address.cidade || "", address.uf || "");
-      const bestCity = foundCities.find((city) => city.nome.toLowerCase().includes((address.cidade || "").toLowerCase()));
+        const foundCities = await searchCities(address.cidade || "", address.uf || "");
+        const bestCity = foundCities.find((city) => city.nome.toLowerCase().includes((address.cidade || "").toLowerCase()));
 
-      setForm((current) => ({
-        ...current,
-        rua: address.rua || current.rua,
-        bairro: address.bairro || current.bairro,
-        cidade: bestCity?.codigo ? String(bestCity.codigo) : current.cidade,
-        cidadeNome: bestCity?.nome || address.cidade || current.cidadeNome,
-      }));
-    } catch {
-      setErrors((current) => ({ ...current, cep: "Não foi possível consultar este CEP." }));
-    } finally {
-      setCepLoading(false);
-    }
-  }
+        setForm((current) => ({
+          ...current,
+          rua: address.rua || current.rua,
+          bairro: address.bairro || current.bairro,
+          cidade: bestCity?.codigo ? String(bestCity.codigo) : current.cidade,
+          cidadeNome: bestCity?.nome || address.cidade || current.cidadeNome,
+        }));
+      } catch {
+        setErrors((current) => ({ ...current, cep: "Não foi possível consultar este CEP." }));
+      } finally {
+        setCepLoading(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timeout);
+  }, [form.cep]);
 
   useEffect(() => {
     if (form.cidadeNome.trim().length < 2 || form.cidade) return;
@@ -298,16 +331,23 @@ export default function App() {
             </p>
           </div>
 
-          {errors.geral ? (
-            <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-              {errors.geral}
-            </div>
-          ) : null}
-
           {result ? (
             <section className="rounded-lg border border-primary-200 bg-primary-50 p-5">
-              <h2 className="text-xl font-bold text-primary-900">Contratação enviada</h2>
-              <p className="mt-2 text-gray-700">{result.mensagem || "Cadastro realizado com sucesso."}</p>
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm">
+                  <img className="h-7 w-7 object-contain" src="/icons/icone.png" alt="CarFlow" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-primary-900">Contratação enviada</h2>
+                  <p className="mt-2 text-gray-700">
+                    Após o pagamento seu acesso será liberado automaticamente, acesse{" "}
+                    <a className="font-semibold text-primary-700 underline" href="https://sistema.carflow.app.br" target="_blank" rel="noreferrer">
+                      https://sistema.carflow.app.br
+                    </a>{" "}
+                    e faça o login usando seu número de telefone e o CPF/CNPJ como senha.
+                  </p>
+                </div>
+              </div>
               <p className="mt-3 text-sm text-gray-600">ID público: {result.id}</p>
 
               {paid ? (
@@ -372,19 +412,35 @@ export default function App() {
                 <h2 className="section-title">Dados da empresa</h2>
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label="Responsável" error={errors.nomeResponsavel}>
-                    <TextInput value={form.nomeResponsavel} error={errors.nomeResponsavel} onChange={(event) => update("nomeResponsavel", event.target.value)} />
+                    <TextInput autoComplete="name" placeholder="Nome de quem responde pela empresa" value={form.nomeResponsavel} error={errors.nomeResponsavel} onChange={(event) => update("nomeResponsavel", event.target.value)} />
                   </Field>
                   <Field label="Empresa" error={errors.nomeEmpresa}>
-                    <TextInput value={form.nomeEmpresa} error={errors.nomeEmpresa} onChange={(event) => update("nomeEmpresa", event.target.value)} />
+                    <TextInput autoComplete="organization" placeholder="Nome fantasia ou razão social" value={form.nomeEmpresa} error={errors.nomeEmpresa} onChange={(event) => update("nomeEmpresa", event.target.value)} />
                   </Field>
                   <Field label="CPF/CNPJ" error={errors.cpfCnpj}>
-                    <TextInput value={form.cpfCnpj} error={errors.cpfCnpj} inputMode="numeric" onChange={(event) => update("cpfCnpj", mask(event.target.value, "cpfCnpj"))} />
+                    <TextInput
+                      autoComplete="off"
+                      inputMode="numeric"
+                      maxLength={18}
+                      placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                      value={form.cpfCnpj}
+                      error={errors.cpfCnpj}
+                      onChange={(event) => update("cpfCnpj", mask(event.target.value, "cpfCnpj"))}
+                    />
                   </Field>
                   <Field label="Telefone" error={errors.telefone}>
-                    <TextInput value={form.telefone} error={errors.telefone} inputMode="tel" onChange={(event) => update("telefone", mask(event.target.value, "phone"))} />
+                    <TextInput
+                      autoComplete="tel"
+                      inputMode="tel"
+                      maxLength={15}
+                      placeholder="(00) 00000-0000"
+                      value={form.telefone}
+                      error={errors.telefone}
+                      onChange={(event) => update("telefone", mask(event.target.value, "phone"))}
+                    />
                   </Field>
                   <Field label="E-mail" error={errors.email}>
-                    <TextInput value={form.email} error={errors.email} type="email" onChange={(event) => update("email", event.target.value)} />
+                    <TextInput autoComplete="email" placeholder="seuemail@empresa.com" value={form.email} error={errors.email} type="email" onChange={(event) => update("email", event.target.value)} />
                   </Field>
                 </div>
               </section>
@@ -393,42 +449,66 @@ export default function App() {
                 <h2 className="section-title">Endereço</h2>
                 <div className="grid gap-4 md:grid-cols-6">
                   <div className="md:col-span-2">
-                    <Field label={cepLoading ? "CEP consultando..." : "CEP"} error={errors.cep}>
-                      <TextInput value={form.cep} error={errors.cep} inputMode="numeric" onBlur={handleCepBlur} onChange={(event) => update("cep", mask(event.target.value, "cep"))} />
+                    <Field label="CEP" error={errors.cep}>
+                      <div className="relative">
+                        <TextInput
+                          autoComplete="postal-code"
+                          inputMode="numeric"
+                          maxLength={9}
+                          placeholder="00000-000"
+                          value={form.cep}
+                          error={errors.cep}
+                          onChange={(event) => update("cep", mask(event.target.value, "cep"))}
+                        />
+                        {cepLoading ? (
+                          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                            <Spinner className="h-4 w-4" />
+                          </span>
+                        ) : null}
+                      </div>
                     </Field>
                   </div>
                   <div className="md:col-span-4">
                     <Field label="Rua" error={errors.rua}>
-                      <TextInput value={form.rua} error={errors.rua} onChange={(event) => update("rua", event.target.value)} />
+                      <TextInput autoComplete="address-line1" placeholder="Rua, avenida, alameda..." value={form.rua} error={errors.rua} onChange={(event) => update("rua", event.target.value)} />
                     </Field>
                   </div>
                   <div className="md:col-span-2">
                     <Field label="Número" error={errors.numero}>
-                      <TextInput value={form.numero} error={errors.numero} onChange={(event) => update("numero", event.target.value)} />
+                      <TextInput autoComplete="off" placeholder="123" value={form.numero} error={errors.numero} onChange={(event) => update("numero", event.target.value)} />
                     </Field>
                   </div>
                   <div className="md:col-span-4">
                     <Field label="Complemento" error={errors.complemento}>
-                      <TextInput value={form.complemento} onChange={(event) => update("complemento", event.target.value)} />
+                      <TextInput autoComplete="address-line2" placeholder="Sala, bloco, fundos..." value={form.complemento} onChange={(event) => update("complemento", event.target.value)} />
                     </Field>
                   </div>
                   <div className="md:col-span-3">
                     <Field label="Bairro" error={errors.bairro}>
-                      <TextInput value={form.bairro} error={errors.bairro} onChange={(event) => update("bairro", event.target.value)} />
+                      <TextInput autoComplete="address-level3" placeholder="Centro" value={form.bairro} error={errors.bairro} onChange={(event) => update("bairro", event.target.value)} />
                     </Field>
                   </div>
                   <div className="relative md:col-span-3">
-                    <Field label={cityLoading ? "Cidade buscando..." : "Cidade"} error={errors.cidadeNome}>
-                      <TextInput
-                        value={form.cidadeNome}
-                        error={errors.cidadeNome}
-                        onChange={(event) => {
-                          update("cidade", "");
-                          update("cidadeNome", event.target.value);
-                        }}
-                      />
+                    <Field label="Cidade" error={errors.cidadeNome}>
+                      <div className="relative">
+                        <TextInput
+                          autoComplete="off"
+                          placeholder="Digite e selecione sua cidade"
+                          value={form.cidadeNome}
+                          error={errors.cidadeNome}
+                          onChange={(event) => {
+                            update("cidade", "");
+                            update("cidadeNome", event.target.value);
+                          }}
+                        />
+                        {isCityLocked ? (
+                          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                            <Spinner className="h-4 w-4" />
+                          </span>
+                        ) : null}
+                      </div>
                     </Field>
-                    {cities.length > 0 && !form.cidade ? (
+                    {cities.length > 0 && !form.cidade && !isCityLocked ? (
                       <div className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-primary-100 bg-white shadow-lg">
                         {cities.map((city) => (
                           <button className="block w-full px-3 py-2 text-left text-sm hover:bg-primary-50" key={city.codigo} type="button" onClick={() => selectCity(city)}>
@@ -460,31 +540,39 @@ export default function App() {
                   ))}
                 </div>
 
-                {form.formaPagamento === "CREDIT_CARD" ? (
+                  {form.formaPagamento === "CREDIT_CARD" ? (
                   <div className="grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 md:grid-cols-6">
                     <div className="md:col-span-3">
                       <Field label="Número do cartão" error={errors.numeroCartao}>
-                        <TextInput value={form.numeroCartao} error={errors.numeroCartao} inputMode="numeric" onChange={(event) => update("numeroCartao", mask(event.target.value, "card"))} />
+                        <TextInput
+                          autoComplete="cc-number"
+                          inputMode="numeric"
+                          maxLength={19}
+                          placeholder="0000 0000 0000 0000"
+                          value={form.numeroCartao}
+                          error={errors.numeroCartao}
+                          onChange={(event) => update("numeroCartao", mask(event.target.value, "card"))}
+                        />
                       </Field>
                     </div>
                     <div className="md:col-span-3">
                       <Field label="Nome do titular" error={errors.nomeTitular}>
-                        <TextInput value={form.nomeTitular} error={errors.nomeTitular} onChange={(event) => update("nomeTitular", event.target.value.toUpperCase())} />
+                        <TextInput autoComplete="cc-name" placeholder="NOME COMO NO CARTÃO" value={form.nomeTitular} error={errors.nomeTitular} onChange={(event) => update("nomeTitular", event.target.value.toUpperCase())} />
                       </Field>
                     </div>
                     <div className="md:col-span-2">
                       <Field label="Validade" error={errors.validade}>
-                        <TextInput value={form.validade} error={errors.validade} placeholder="12/2030" inputMode="numeric" onChange={(event) => update("validade", mask(event.target.value, "validade"))} />
+                        <TextInput autoComplete="cc-exp" value={form.validade} error={errors.validade} placeholder="12/2030" inputMode="numeric" maxLength={7} onChange={(event) => update("validade", mask(event.target.value, "validade"))} />
                       </Field>
                     </div>
                     <div className="md:col-span-2">
                       <Field label="CVV" error={errors.cvv}>
-                        <TextInput value={form.cvv} error={errors.cvv} inputMode="numeric" onChange={(event) => update("cvv", mask(event.target.value, "cvv"))} />
+                        <TextInput autoComplete="cc-csc" placeholder="123" value={form.cvv} error={errors.cvv} inputMode="numeric" maxLength={4} onChange={(event) => update("cvv", mask(event.target.value, "cvv"))} />
                       </Field>
                     </div>
                     <div className="md:col-span-2">
                       <Field label="CPF do titular" error={errors.cpfTitular}>
-                        <TextInput value={form.cpfTitular} error={errors.cpfTitular} inputMode="numeric" onChange={(event) => update("cpfTitular", mask(event.target.value, "cpf"))} />
+                        <TextInput autoComplete="off" placeholder="000.000.000-00" value={form.cpfTitular} error={errors.cpfTitular} inputMode="numeric" maxLength={14} onChange={(event) => update("cpfTitular", mask(event.target.value, "cpf"))} />
                       </Field>
                     </div>
                   </div>
@@ -492,8 +580,15 @@ export default function App() {
               </section>
 
               <button className="btn btn-primary mt-8 w-full justify-center py-3 text-base" disabled={submitting} type="submit">
+                {submitting ? <Spinner className="mr-2 h-4 w-4 text-white" /> : null}
                 {submitting ? "Enviando..." : "Finalizar contratação"}
               </button>
+
+              {errors.geral ? (
+                <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                  {errors.geral}
+                </div>
+              ) : null}
             </>
           )}
         </form>
