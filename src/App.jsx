@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 const API_URL = "https://0fbd-2804-330-3054-e900-c810-a1a2-f4f2-d794.ngrok-free.app";
 const HEADERS = {
@@ -17,6 +17,15 @@ const paymentMethods = [
   { value: "BOLETO", label: "Boleto" },
   { value: "CREDIT_CARD", label: "Cartão" },
 ];
+
+const PROMO_PLAN = "MENSAL-PROMOCAO";
+
+function getInitialPlan() {
+  if (typeof window === "undefined") return "MENSAL";
+
+  const planFromQuery = new URLSearchParams(window.location.search).get("plano")?.toUpperCase();
+  return plans.some((plan) => plan.value === planFromQuery) || planFromQuery === PROMO_PLAN ? planFromQuery : "MENSAL";
+}
 
 const onlyNumbers = (value) => value.replace(/\D/g, "");
 
@@ -115,7 +124,7 @@ function Spinner({ className = "" }) {
 }
 
 export default function App() {
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => ({ ...emptyForm, plano: getInitialPlan() }));
   const [errors, setErrors] = useState({});
   const [cities, setCities] = useState([]);
   const [cityLoading, setCityLoading] = useState(false);
@@ -125,10 +134,15 @@ export default function App() {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [copied, setCopied] = useState(false);
   const isCityLocked = cityLoading || cepLoading;
+  const fieldRefs = useRef({});
+  const isPromoPlan = form.plano === PROMO_PLAN;
 
   const selectedPlan = useMemo(
-    () => plans.find((plan) => plan.value === form.plano) || plans[0],
-    [form.plano],
+    () =>
+      isPromoPlan
+        ? { value: PROMO_PLAN, label: "Mensal", price: "R$ 29,90", note: "Primeira parcela. Depois R$ 59,90/mês." }
+        : plans.find((plan) => plan.value === form.plano) || plans[0],
+    [form.plano, isPromoPlan],
   );
 
   function update(field, value) {
@@ -237,6 +251,15 @@ export default function App() {
     }
 
     setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      const firstInvalidField = Object.keys(nextErrors)[0];
+      requestAnimationFrame(() => {
+        fieldRefs.current[firstInvalidField]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+    }
     return Object.keys(nextErrors).length === 0;
   }
 
@@ -388,36 +411,49 @@ export default function App() {
             <>
               <section className="space-y-4">
                 <h2 className="section-title">Plano</h2>
-                <div className="grid gap-3 md:grid-cols-3">
-                  {plans.map((plan) => (
-                    <button
-                      className={`rounded-lg border p-4 text-left transition ${
-                        form.plano === plan.value
-                          ? "border-primary-600 bg-primary-50 ring-2 ring-primary-100"
-                          : "border-gray-200 bg-white hover:border-primary-300"
-                      }`}
-                      key={plan.value}
-                      type="button"
-                      onClick={() => update("plano", plan.value)}
-                    >
-                      <span className="block font-bold text-primary-900">{plan.label}</span>
-                      <span className="mt-2 block text-2xl font-bold text-gray-950">{plan.price}</span>
-                      <span className="mt-1 block text-sm text-gray-600">{plan.note}</span>
-                    </button>
-                  ))}
-                </div>
+                {isPromoPlan ? (
+                  <div className="rounded-lg border border-primary-600 bg-primary-50 p-4 ring-2 ring-primary-100">
+                    <span className="block font-bold text-primary-900">Mensal</span>
+                    <span className="mt-2 block text-2xl font-bold text-gray-950">R$ 29,90</span>
+                    <span className="mt-1 block text-sm text-gray-600">Primeira parcela. Depois R$ 59,90/mês.</span>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-3">
+                    {plans.map((plan) => (
+                      <button
+                        className={`rounded-lg border p-4 text-left transition ${
+                          form.plano === plan.value
+                            ? "border-primary-600 bg-primary-50 ring-2 ring-primary-100"
+                            : "border-gray-200 bg-white hover:border-primary-300"
+                        }`}
+                        key={plan.value}
+                        type="button"
+                        onClick={() => update("plano", plan.value)}
+                      >
+                        <span className="block font-bold text-primary-900">{plan.label}</span>
+                        <span className="mt-2 block text-2xl font-bold text-gray-950">{plan.price}</span>
+                        <span className="mt-1 block text-sm text-gray-600">{plan.note}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </section>
 
               <section className="mt-8 space-y-4">
                 <h2 className="section-title">Dados da empresa</h2>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Responsável" error={errors.nomeResponsavel}>
+                  <div ref={(node) => { fieldRefs.current.nomeResponsavel = node; }}>
+                    <Field label="Responsável" error={errors.nomeResponsavel}>
                     <TextInput autoComplete="name" placeholder="Nome de quem responde pela empresa" value={form.nomeResponsavel} error={errors.nomeResponsavel} onChange={(event) => update("nomeResponsavel", event.target.value)} />
-                  </Field>
-                  <Field label="Empresa" error={errors.nomeEmpresa}>
+                    </Field>
+                  </div>
+                  <div ref={(node) => { fieldRefs.current.nomeEmpresa = node; }}>
+                    <Field label="Empresa" error={errors.nomeEmpresa}>
                     <TextInput autoComplete="organization" placeholder="Nome fantasia ou razão social" value={form.nomeEmpresa} error={errors.nomeEmpresa} onChange={(event) => update("nomeEmpresa", event.target.value)} />
-                  </Field>
-                  <Field label="CPF/CNPJ" error={errors.cpfCnpj}>
+                    </Field>
+                  </div>
+                  <div ref={(node) => { fieldRefs.current.cpfCnpj = node; }}>
+                    <Field label="CPF/CNPJ" error={errors.cpfCnpj}>
                     <TextInput
                       autoComplete="off"
                       inputMode="numeric"
@@ -427,8 +463,10 @@ export default function App() {
                       error={errors.cpfCnpj}
                       onChange={(event) => update("cpfCnpj", mask(event.target.value, "cpfCnpj"))}
                     />
-                  </Field>
-                  <Field label="Telefone" error={errors.telefone}>
+                    </Field>
+                  </div>
+                  <div ref={(node) => { fieldRefs.current.telefone = node; }}>
+                    <Field label="Telefone" error={errors.telefone}>
                     <TextInput
                       autoComplete="tel"
                       inputMode="tel"
@@ -438,17 +476,20 @@ export default function App() {
                       error={errors.telefone}
                       onChange={(event) => update("telefone", mask(event.target.value, "phone"))}
                     />
-                  </Field>
-                  <Field label="E-mail" error={errors.email}>
+                    </Field>
+                  </div>
+                  <div ref={(node) => { fieldRefs.current.email = node; }}>
+                    <Field label="E-mail" error={errors.email}>
                     <TextInput autoComplete="email" placeholder="seuemail@empresa.com" value={form.email} error={errors.email} type="email" onChange={(event) => update("email", event.target.value)} />
-                  </Field>
+                    </Field>
+                  </div>
                 </div>
               </section>
 
               <section className="mt-8 space-y-4">
                 <h2 className="section-title">Endereço</h2>
                 <div className="grid gap-4 md:grid-cols-6">
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-2" ref={(node) => { fieldRefs.current.cep = node; }}>
                     <Field label="CEP" error={errors.cep}>
                       <div className="relative">
                         <TextInput
@@ -468,12 +509,12 @@ export default function App() {
                       </div>
                     </Field>
                   </div>
-                  <div className="md:col-span-4">
+                  <div className="md:col-span-4" ref={(node) => { fieldRefs.current.rua = node; }}>
                     <Field label="Rua" error={errors.rua}>
                       <TextInput autoComplete="address-line1" placeholder="Rua, avenida, alameda..." value={form.rua} error={errors.rua} onChange={(event) => update("rua", event.target.value)} />
                     </Field>
                   </div>
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-2" ref={(node) => { fieldRefs.current.numero = node; }}>
                     <Field label="Número" error={errors.numero}>
                       <TextInput autoComplete="off" placeholder="123" value={form.numero} error={errors.numero} onChange={(event) => update("numero", event.target.value)} />
                     </Field>
@@ -483,12 +524,12 @@ export default function App() {
                       <TextInput autoComplete="address-line2" placeholder="Sala, bloco, fundos..." value={form.complemento} onChange={(event) => update("complemento", event.target.value)} />
                     </Field>
                   </div>
-                  <div className="md:col-span-3">
+                  <div className="md:col-span-3" ref={(node) => { fieldRefs.current.bairro = node; }}>
                     <Field label="Bairro" error={errors.bairro}>
                       <TextInput autoComplete="address-level3" placeholder="Centro" value={form.bairro} error={errors.bairro} onChange={(event) => update("bairro", event.target.value)} />
                     </Field>
                   </div>
-                  <div className="relative md:col-span-3">
+                  <div className="relative md:col-span-3" ref={(node) => { fieldRefs.current.cidadeNome = node; }}>
                     <Field label="Cidade" error={errors.cidadeNome}>
                       <div className="relative">
                         <TextInput
@@ -542,7 +583,7 @@ export default function App() {
 
                   {form.formaPagamento === "CREDIT_CARD" ? (
                   <div className="grid gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 md:grid-cols-6">
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-3" ref={(node) => { fieldRefs.current.numeroCartao = node; }}>
                       <Field label="Número do cartão" error={errors.numeroCartao}>
                         <TextInput
                           autoComplete="cc-number"
@@ -555,22 +596,22 @@ export default function App() {
                         />
                       </Field>
                     </div>
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-3" ref={(node) => { fieldRefs.current.nomeTitular = node; }}>
                       <Field label="Nome do titular" error={errors.nomeTitular}>
                         <TextInput autoComplete="cc-name" placeholder="NOME COMO NO CARTÃO" value={form.nomeTitular} error={errors.nomeTitular} onChange={(event) => update("nomeTitular", event.target.value.toUpperCase())} />
                       </Field>
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="md:col-span-2" ref={(node) => { fieldRefs.current.validade = node; }}>
                       <Field label="Validade" error={errors.validade}>
                         <TextInput autoComplete="cc-exp" value={form.validade} error={errors.validade} placeholder="12/2030" inputMode="numeric" maxLength={7} onChange={(event) => update("validade", mask(event.target.value, "validade"))} />
                       </Field>
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="md:col-span-2" ref={(node) => { fieldRefs.current.cvv = node; }}>
                       <Field label="CVV" error={errors.cvv}>
                         <TextInput autoComplete="cc-csc" placeholder="123" value={form.cvv} error={errors.cvv} inputMode="numeric" maxLength={4} onChange={(event) => update("cvv", mask(event.target.value, "cvv"))} />
                       </Field>
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="md:col-span-2" ref={(node) => { fieldRefs.current.cpfTitular = node; }}>
                       <Field label="CPF do titular" error={errors.cpfTitular}>
                         <TextInput autoComplete="off" placeholder="000.000.000-00" value={form.cpfTitular} error={errors.cpfTitular} inputMode="numeric" maxLength={14} onChange={(event) => update("cpfTitular", mask(event.target.value, "cpf"))} />
                       </Field>
@@ -602,7 +643,10 @@ export default function App() {
             </div>
             <div className="flex items-center justify-between gap-4">
               <dt className="text-gray-600">Valor</dt>
-              <dd className="font-semibold text-gray-950">{selectedPlan.price}</dd>
+              <dd className="text-right font-semibold text-gray-950">
+                <span className="block">{selectedPlan.price}</span>
+                {selectedPlan.note ? <span className="mt-1 block text-xs font-medium text-gray-500">{selectedPlan.note}</span> : null}
+              </dd>
             </div>
             <div className="flex items-center justify-between gap-4">
               <dt className="text-gray-600">Pagamento</dt>
