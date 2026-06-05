@@ -28,6 +28,7 @@ function getInitialPlan() {
 }
 
 const onlyNumbers = (value) => value.replace(/\D/g, "");
+const SYSTEM_URL = "https://sistemas.caflow.app.br";
 
 function formatCpf(numbers) {
   return numbers
@@ -120,6 +121,17 @@ function Spinner({ className = "" }) {
         d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 1 0-6 6v4a10 10 0 0 1 0-20Z"
       />
     </svg>
+  );
+}
+
+function SuccessCheck() {
+  return (
+    <div className="success-check" aria-hidden="true">
+      <svg viewBox="0 0 96 96" fill="none">
+        <circle className="success-check-circle" cx="48" cy="48" r="42" />
+        <path className="success-check-mark" d="M29 49.5 41.5 62 68 35" />
+      </svg>
+    </div>
   );
 }
 
@@ -286,7 +298,7 @@ export default function App() {
         bairro: form.bairro.trim(),
         plano: form.plano,
         formaPagamento: form.formaPagamento,
-        origem: 4,
+        origem: null,
       };
 
       if (form.formaPagamento === "CREDIT_CARD") {
@@ -355,7 +367,35 @@ export default function App() {
           </div>
 
           {result ? (
-            <section className="rounded-lg border border-primary-200 bg-primary-50 p-5">
+            <section className={`rounded-lg border p-5 ${paid ? "success-panel" : "border-primary-200 bg-primary-50"}`}>
+              {paid ? (
+                <div className="text-center">
+                  <SuccessCheck />
+                  <p className="mt-5 text-sm font-semibold uppercase tracking-wide text-emerald-700">Pagamento confirmado</p>
+                  <h2 className="mt-2 text-3xl font-bold text-gray-950">Sua assinatura está ativa</h2>
+                  <p className="mx-auto mt-3 max-w-xl text-gray-700">
+                    Seu acesso ao CarFlow foi liberado automaticamente. Entre no sistema usando seu telefone como login e os dígitos do CPF/CNPJ como senha inicial.
+                  </p>
+
+                  <div className="mx-auto mt-6 grid max-w-xl gap-3 rounded-lg border border-emerald-100 bg-white p-4 text-left shadow-sm md:grid-cols-2">
+                    <div>
+                      <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Login</span>
+                      <span className="mt-1 block font-bold text-gray-950">Telefone cadastrado</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Senha inicial</span>
+                      <span className="mt-1 block font-bold text-gray-950">Dígitos do CPF/CNPJ</span>
+                    </div>
+                  </div>
+
+                  <a className="btn btn-primary mt-6 justify-center px-6 py-3 text-base" href={SYSTEM_URL} target="_blank" rel="noreferrer">
+                    Acessar o sistema
+                  </a>
+
+                  <p className="mt-4 text-xs text-gray-500">ID público: {result.id}</p>
+                </div>
+              ) : (
+                <>
               <div className="flex items-start gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm">
                   <img className="h-7 w-7 object-contain" src="/icons/icone.png" alt="CarFlow" />
@@ -364,8 +404,8 @@ export default function App() {
                   <h2 className="text-xl font-bold text-primary-900">Contratação enviada</h2>
                   <p className="mt-2 text-gray-700">
                     Após o pagamento seu acesso será liberado automaticamente, acesse{" "}
-                    <a className="font-semibold text-primary-700 underline" href="https://sistema.carflow.app.br" target="_blank" rel="noreferrer">
-                      https://sistema.carflow.app.br
+                    <a className="font-semibold text-primary-700 underline" href={SYSTEM_URL} target="_blank" rel="noreferrer">
+                      {SYSTEM_URL}
                     </a>{" "}
                     e faça o login usando seu número de telefone e o CPF/CNPJ como senha.
                   </p>
@@ -406,6 +446,8 @@ export default function App() {
                   Status atual: {paymentStatus?.asaasStatus || payment?.status || "aguardando pagamento"}.
                 </p>
               ) : null}
+                </>
+              )}
             </section>
           ) : (
             <>

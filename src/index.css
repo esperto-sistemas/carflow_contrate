@@ -36,4 +36,53 @@
   .section-title {
     @apply border-b border-gray-200 pb-2 text-lg font-bold text-primary-900;
   }
+
+  .success-panel {
+    @apply border-emerald-200 bg-gradient-to-b from-emerald-50 via-white to-white shadow-sm;
+  }
+
+  .success-check {
+    @apply mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-white shadow-lg shadow-emerald-100;
+    animation: success-pop 520ms cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+  }
+
+  .success-check svg {
+    @apply h-24 w-24;
+  }
+
+  .success-check-circle {
+    stroke: #10b981;
+    stroke-width: 6;
+    stroke-dasharray: 264;
+    stroke-dashoffset: 264;
+    animation: success-draw 700ms ease-out 120ms forwards;
+  }
+
+  .success-check-mark {
+    stroke: #059669;
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 56;
+    stroke-dashoffset: 56;
+    animation: success-draw 520ms ease-out 620ms forwards;
+  }
+}
+
+@keyframes success-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes success-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
