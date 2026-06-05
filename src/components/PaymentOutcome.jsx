@@ -1,6 +1,6 @@
 import React from "react";
 
-const SYSTEM_URL = "https://sistema.caflow.app.br";
+const SYSTEM_URL = "https://sistema.carflow.app.br";
 
 function SuccessCheck() {
   return (

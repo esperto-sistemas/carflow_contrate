@@ -1,6 +1,6 @@
 import React from "react";
 
-const SYSTEM_URL = "https://sistema.caflow.app.br";
+const SYSTEM_URL = "https://sistema.carflow.app.br";
 
 export default function PaymentPending({ payment, copied, onCopyPix }) {
   const pixQrCode = payment?.qrCodePix
