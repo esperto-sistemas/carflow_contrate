@@ -3,8 +3,7 @@ import ContractForm from "./components/ContractForm";
 import PaymentOutcome from "./components/PaymentOutcome";
 import PaymentPending from "./components/PaymentPending";
 
-const API_URL =
-  "https://0fbd-2804-330-3054-e900-c810-a1a2-f4f2-d794.ngrok-free.app";
+const API_URL = "https://apicontrole.carflow.app.br";
 const HEADERS = {
   "Content-Type": "application/json",
   "ngrok-skip-browser-warning": "true",
