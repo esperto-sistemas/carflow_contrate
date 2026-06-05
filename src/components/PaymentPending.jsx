@@ -10,9 +10,6 @@ export default function PaymentPending({ payment, copied, onCopyPix }) {
       <div className="rounded-xl border border-primary-100 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 border-b border-gray-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 ring-1 ring-primary-100">
-              <img className="h-7 w-7 object-contain" src="/icons/icone.png" alt="CarFlow" />
-            </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-primary-600">Pagamento pendente</p>
               <h2 className="mt-1 text-2xl font-bold text-primary-950">Contratação enviada</h2>
