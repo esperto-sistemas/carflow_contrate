@@ -2,13 +2,13 @@ import React from "react";
 
 const SYSTEM_URL = "https://sistema.carflow.app.br";
 
-export default function PaymentPending({ payment, copied, onCopyPix }) {
+export default function PaymentPending({ payment, copied, onCopyPix, formaPagamento }) {
   const pixQrCode = payment?.qrCodePix
     ? `data:image/png;base64,${payment.qrCodePix}`
     : null;
 
   const forma = (
-    payment?.formaPagamento || payment?.formaPagamentoSelecionada || payment?.method || ""
+    formaPagamento || payment?.formaPagamento || payment?.formaPagamentoSelecionada || payment?.method || ""
   ).toString().toUpperCase();
 
   const pixBlock = (

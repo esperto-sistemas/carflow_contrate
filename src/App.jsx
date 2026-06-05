@@ -251,7 +251,8 @@ export default function App() {
   }, [form.cidadeNome, form.cidade]);
 
   useEffect(() => {
-    if (!result?.id || result.pagamento?.pago) return;
+    if (!result?.id || result.pagamento?.pago || paymentStatus?.pagamento?.pago)
+      return;
 
     const interval = setInterval(async () => {
       try {
@@ -261,13 +262,18 @@ export default function App() {
         );
         const data = await response.json();
         setPaymentStatus(data);
+
+        // Se a resposta indicar que já foi paga, pare de consultar imediatamente
+        if (data?.pagamento?.pago) {
+          clearInterval(interval);
+        }
       } catch {
         setPaymentStatus((current) => current);
       }
     }, 7000);
 
     return () => clearInterval(interval);
-  }, [result?.id, result?.pagamento?.pago]);
+  }, [result?.id, result?.pagamento?.pago, paymentStatus?.pagamento?.pago]);
 
   function validate() {
     const nextErrors = {};
@@ -449,41 +455,44 @@ export default function App() {
             payment={payment}
             copied={copied}
             onCopyPix={copyPix}
+            formaPagamento={form.formaPagamento}
           />
         )}
 
-        <aside className="h-fit rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold text-primary-900">Resumo</h2>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-gray-600">Plano</dt>
-              <dd className="font-semibold text-gray-950">
-                {selectedPlan.label}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-gray-600">Valor</dt>
-              <dd className="text-right font-semibold text-gray-950">
-                <span className="block">{selectedPlan.price}</span>
-                {selectedPlan.note ? (
-                  <span className="mt-1 block text-xs font-medium text-gray-500">
-                    {selectedPlan.note}
-                  </span>
-                ) : null}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-gray-600">Pagamento</dt>
-              <dd className="font-semibold text-gray-950">
-                {
-                  paymentMethods.find(
-                    (method) => method.value === form.formaPagamento,
-                  )?.label
-                }
-              </dd>
-            </div>
-          </dl>
-        </aside>
+        {!paid && (
+          <aside className="h-fit rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-bold text-primary-900">Resumo</h2>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-gray-600">Plano</dt>
+                <dd className="font-semibold text-gray-950">
+                  {selectedPlan.label}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-gray-600">Valor</dt>
+                <dd className="text-right font-semibold text-gray-950">
+                  <span className="block">{selectedPlan.price}</span>
+                  {selectedPlan.note ? (
+                    <span className="mt-1 block text-xs font-medium text-gray-500">
+                      {selectedPlan.note}
+                    </span>
+                  ) : null}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-gray-600">Pagamento</dt>
+                <dd className="font-semibold text-gray-950">
+                  {
+                    paymentMethods.find(
+                      (method) => method.value === form.formaPagamento,
+                    )?.label
+                  }
+                </dd>
+              </div>
+            </dl>
+          </aside>
+        )}
       </section>
     </main>
   );
