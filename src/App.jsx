@@ -6,7 +6,6 @@ import PaymentPending from "./components/PaymentPending";
 const API_URL = "https://apicontrole.carflow.app.br";
 const HEADERS = {
   "Content-Type": "application/json",
-  "ngrok-skip-browser-warning": "true",
 };
 
 const plans = [
