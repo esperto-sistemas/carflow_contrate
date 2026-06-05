@@ -410,7 +410,19 @@ export default function App() {
       </header>
 
       <section className="mx-auto grid max-w-5xl gap-6 px-4 py-8 lg:grid-cols-[1fr_320px]">
-        {!result ? (
+        <PaymentPending
+          payment={{
+            pago: false,
+            pixCopiaCola:
+              "00020101021226820014br.gov.bcb.pix2560pix-h.asaas.com/qr/cobv/827d56bb-63c3-4eaf-b7f0-31dc47a0265e5204000053039865802BR5925ASAAS GESTAO FINANCEIRA S6015Serafina Correa61089925000062070503***630415FD",
+            qrCodePix:
+              "iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADeklEQVR4Xu2XS25bQRADtdP9b5RjvZ0iFtkjOUBgw1m4A3D0Pj1sFr2YlgDfHt9cv25/Kl9dJT9bJT9b/0ReN9b9cd2v51N76juVuqofarhrd8mtpGVbsathjTTzUBLSKbmWlG5FTVy2HpDYXHGXXE4OL284RZASAxEl/w9SBWVGwgHKYiTyKLmfdEsHzdErxDPAWw+GIGSCSm4lz5l/6RN3yb9+fph8WxcBPm4PAXfmwMSskktJKzzdGbt1I4e+eyBKriXjnYetmMaYOkEyXvPNLrmPvDh1bXHijxWQvQzHKr7kUtINA3Em6NU61F1v6SX3kvRxaxlVWy9DLuHGWXIrSU96GAkp9HHXTW+4S64lU3/w69gJQ/WX2XtfJfeS9GL3NSZtxGlZZqey5FKSUZBkmzHnCUmwB+aNLrmUtPSkFPCU4gsbgMK6/1TJvaSvK1OQafDeUdRR/SfOL3XJbaROVhcWnnkBmcCCzCq5mTyHGzIzMfuEkZ2N9JJbyadXdqGC7HE/oXxuJiah5F7yho7BQe6HSiDBeqosuZaUqnaOXqqWDQNTnnD1Sq4ljR2QHrNhL9lJy7pnEkruIxFi9knPPlYFOvKlMwkll5IAw03GK4aKBGuanZJbSbrPUr2ogBTnPfnUepVcSgphPbdauG+Ki8ZWYdEsl9xK0rRFEMed+eD0STE1ASUXk3pD5LbPpBOHN+NVcimJGtH1gdOyQCazQbfkXtK1ztz9eBRGg/lgKQZPyc3kpYbUsR0HWZJeXdolt5J6vfzq66KL+EChYhZIef3Gl1xGXiAEiPRDW4d9YCao5F4SDNmSSKRjovDDrZKbSXXGafziq6zasGZCT114L/9Sl1xJugWoxtnCWRhmUjIJJfeR7hxCqu7xuZu2bfRLLiUfOm+fvVdY+TIcp0mLb3zJraR0GfH7oLFHGkoAv+ME+n+kkitJzYG8jkA4bjllTuTLVXIpyX780vXAa1a1wDdcdcmtpPS0sNzBDR1qrmj5jS+5kmRJtS/YgSjeNO6SS0kJ0uK6/J2+RjH9yCS8DCW3knfmgCYFkFzhJSveFM6Sm0n6UoNzS72RpbgxeGqkl1xPqq8L0DF0TOKHV6vkfhKnaraUngOzKmzSq+Ra0l3LunBOnQCRJIYvuZZUj/OXg8Zs33Ba+QsUJZeS31wlP1slP1s/Qv4GLWctucEVeqMAAAAASUVORK5CYII=",
+            status: "PENDING",
+          }}
+          copied={copied}
+          onCopyPix={copyPix}
+        />
+        {/* {!result ? (
           <ContractForm
             form={form}
             errors={errors}
@@ -436,8 +448,7 @@ export default function App() {
             payment={payment}
             copied={copied}
             onCopyPix={copyPix}
-          />
-        )}
+          />  )}*/}
 
         <aside className="h-fit rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-bold text-primary-900">Resumo</h2>

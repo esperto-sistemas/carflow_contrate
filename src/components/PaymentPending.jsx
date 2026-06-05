@@ -1,72 +1,133 @@
 import React from "react";
 
-const SYSTEM_URL = "https://sistemas.caflow.app.br";
+const SYSTEM_URL = "https://sistema.caflow.app.br";
 
 export default function PaymentPending({ payment, copied, onCopyPix }) {
-  const pixQrCode = payment?.qrCodePix ? `data:image/png;base64,${payment.qrCodePix}` : null;
+  const pixQrCode = payment?.qrCodePix
+    ? `data:image/png;base64,${payment.qrCodePix}`
+    : null;
 
   return (
-    <section className="">
-      <div className="rounded-xl border border-primary-100 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-4 border-b border-gray-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3">
+    <section className="w-full">
+      <div className="overflow-hidden rounded-2xl border border-primary-100 bg-white shadow-sm">
+        {/* Header */}
+        <div className="border-b border-gray-100 p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary-600">Pagamento pendente</p>
-              <h2 className="mt-1 text-2xl font-bold text-primary-950">Contratação enviada</h2>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary-600">
+                Pagamento pendente
+              </p>
+
+              <h2 className="mt-1 text-2xl font-bold text-primary-950">
+                Contratação enviada
+              </h2>
+
               <p className="mt-2 max-w-2xl text-sm text-gray-600">
-                Seu acesso será liberado automaticamente após a confirmação do pagamento.
+                Seu acesso será liberado automaticamente após a confirmação do
+                pagamento.
               </p>
             </div>
+
+            <div className="inline-flex items-center rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 ring-1 ring-amber-100">
+              Aguardando pagamento
+            </div>
           </div>
-          <span className="inline-flex w-fit items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-100">
-            Aguardando pagamento
-          </span>
         </div>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_260px]">
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-primary-700">Pagamento</h3>
+        {/* Content */}
+        <div className="p-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* QR CODE */}
 
-            {payment?.pixCopiaCola ? (
-              <div className="mt-3 rounded-lg border border-primary-100 bg-primary-50/50 p-4">
-                <p className="text-sm font-semibold text-primary-900">Pix copia e cola</p>
-                <textarea className="input mt-2 min-h-24 text-sm" readOnly value={payment.pixCopiaCola} />
-                <button className="btn btn-primary mt-3" type="button" onClick={onCopyPix}>
-                  {copied ? "Copiado" : "Copiar código Pix"}
-                </button>
-              </div>
-            ) : null}
+            {/* PAYMENT INFO */}
+            <div className="order-2 flex flex-col gap-4">
+              {/* PIX */}
+              {payment?.pixCopiaCola && (
+                <div className="rounded-2xl border border-primary-100 bg-primary-50 p-5">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-primary-950">
+                      Pix Copia e Cola
+                    </h3>
+                  </div>
 
-            {payment?.linhaDigitavelBoleto ? (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <h4 className="text-sm font-semibold text-gray-900">Boleto</h4>
-                <p className="mt-2 break-all text-sm text-gray-700">{payment.linhaDigitavelBoleto}</p>
-                {payment.pdfBoleto ? (
-                  <a className="btn btn-primary mt-3 inline-flex" href={payment.pdfBoleto} target="_blank" rel="noreferrer">
-                    Abrir boleto
-                  </a>
-                ) : null}
+                  <p className="mt-2 text-sm text-primary-700">
+                    Caso prefira, copie o código abaixo e cole diretamente no
+                    aplicativo do seu banco.
+                  </p>
+
+                  <div className="mt-4 rounded-xl border border-primary-100 bg-white p-4">
+                    <p className="break-all text-xs leading-relaxed text-gray-700">
+                      {payment.pixCopiaCola}
+                    </p>
+                  </div>
+
+                  <button
+                    className="btn btn-primary mt-4 w-full"
+                    type="button"
+                    onClick={onCopyPix}
+                  >
+                    {copied ? "✓ Código copiado" : "Copiar código Pix"}
+                  </button>
+                </div>
+              )}
+
+              <div className="order-1">
+                <div className="rounded-2xl border border-primary-100 bg-white p-6 text-center shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Escaneie o QR Code Pix
+                  </h3>
+
+                  <p className="mt-2 text-sm text-gray-500">
+                    Abra o aplicativo do seu banco e escaneie o código abaixo.
+                  </p>
+
+                  {pixQrCode ? (
+                    <img
+                      className="mx-auto mt-5 w-full max-w-[280px] rounded-xl border border-gray-100 bg-white p-3"
+                      src={pixQrCode}
+                      alt="QR Code Pix para pagamento"
+                    />
+                  ) : (
+                    <div className="mt-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-sm text-gray-500">
+                      QR Code indisponível para este pagamento.
+                    </div>
+                  )}
+                </div>
               </div>
-            ) : null}
+
+              {/* BOLETO */}
+              {payment?.linhaDigitavelBoleto && (
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📄</span>
+                    <h3 className="text-base font-semibold text-gray-900">
+                      Pagamento via Boleto
+                    </h3>
+                  </div>
+
+                  <p className="mt-3 text-sm text-gray-600">Linha digitável:</p>
+
+                  <div className="mt-2 rounded-xl border border-gray-200 bg-white p-4">
+                    <p className="break-all text-sm text-gray-700">
+                      {payment.linhaDigitavelBoleto}
+                    </p>
+                  </div>
+
+                  {payment.pdfBoleto && (
+                    <a
+                      className="btn btn-secondary mt-4 inline-flex w-full justify-center"
+                      href={payment.pdfBoleto}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Abrir boleto
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-
-          {pixQrCode ? (
-            <div className="rounded-lg border border-gray-200 bg-white p-4 text-center shadow-sm">
-              <p className="text-sm font-semibold text-gray-900">Escaneie o QR Code Pix</p>
-              <img
-                className="mx-auto mt-3 w-full max-w-[220px] rounded-lg border border-gray-100 bg-white p-2"
-                src={pixQrCode}
-                alt="QR Code Pix para pagamento"
-              />
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-center text-sm text-gray-500">
-              QR Code indisponível para este pagamento.
-            </div>
-          )}
         </div>
-
-       
       </div>
     </section>
   );
