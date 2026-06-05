@@ -381,12 +381,25 @@ export default function App() {
   }
 
   async function copyPix() {
-    const pix =
-      result?.pagamento?.pixCopiaCola || paymentStatus?.pagamento?.pixCopiaCola;
-    if (!pix) return;
-    await navigator.clipboard.writeText(pix);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    try {
+      const pix =
+        result?.pagamento?.pixCopiaCola ||
+        paymentStatus?.pagamento?.pixCopiaCola;
+
+      if (!pix) {
+        console.log("PIX não encontrado");
+        return;
+      }
+
+      await navigator.clipboard.writeText(pix);
+
+      console.log("PIX copiado");
+
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (error) {
+      console.error("Erro ao copiar:", error);
+    }
   }
 
   const payment = paymentStatus?.pagamento || result?.pagamento;

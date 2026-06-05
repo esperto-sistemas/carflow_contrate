@@ -36,19 +36,15 @@ export default function PaymentPending({ payment, copied, onCopyPix }) {
 
         {/* Content */}
         <div className="p-6">
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* QR CODE */}
-
-            {/* PAYMENT INFO */}
-            <div className="order-2 flex flex-col gap-4">
-              {/* PIX */}
+          <div className="space-y-6">
+            {/* PIX + QR CODE */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* PIX COPIA E COLA */}
               {payment?.pixCopiaCola && (
                 <div className="rounded-2xl border border-primary-100 bg-primary-50 p-5">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-semibold text-primary-950">
-                      Pix Copia e Cola
-                    </h3>
-                  </div>
+                  <h3 className="text-base font-semibold text-primary-950">
+                    Pix Copia e Cola
+                  </h3>
 
                   <p className="mt-2 text-sm text-primary-700">
                     Caso prefira, copie o código abaixo e cole diretamente no
@@ -71,61 +67,72 @@ export default function PaymentPending({ payment, copied, onCopyPix }) {
                 </div>
               )}
 
-              <div className="order-1">
-                <div className="rounded-2xl border border-primary-100 bg-white p-6 text-center shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Escaneie o QR Code Pix
-                  </h3>
+              {/* QR CODE */}
+              <div className="rounded-2xl border border-primary-100 bg-white p-6 text-center shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Escaneie o QR Code Pix
+                </h3>
 
-                  <p className="mt-2 text-sm text-gray-500">
-                    Abra o aplicativo do seu banco e escaneie o código abaixo.
-                  </p>
+                <p className="mt-2 text-sm text-gray-500">
+                  Abra o aplicativo do seu banco e escaneie o código abaixo.
+                </p>
 
-                  {pixQrCode ? (
-                    <img
-                      className="mx-auto mt-5 w-full max-w-[280px] rounded-xl border border-gray-100 bg-white p-3"
-                      src={pixQrCode}
-                      alt="QR Code Pix para pagamento"
-                    />
-                  ) : (
-                    <div className="mt-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-sm text-gray-500">
-                      QR Code indisponível para este pagamento.
-                    </div>
-                  )}
-                </div>
+                {pixQrCode ? (
+                  <img
+                    className="mx-auto mt-5 w-full max-w-[280px] rounded-xl border border-gray-100 bg-white p-3"
+                    src={pixQrCode}
+                    alt="QR Code Pix para pagamento"
+                  />
+                ) : (
+                  <div className="mt-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-sm text-gray-500">
+                    QR Code indisponível para este pagamento.
+                  </div>
+                )}
               </div>
-
-              {/* BOLETO */}
-              {payment?.linhaDigitavelBoleto && (
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">📄</span>
-                    <h3 className="text-base font-semibold text-gray-900">
-                      Pagamento via Boleto
-                    </h3>
-                  </div>
-
-                  <p className="mt-3 text-sm text-gray-600">Linha digitável:</p>
-
-                  <div className="mt-2 rounded-xl border border-gray-200 bg-white p-4">
-                    <p className="break-all text-sm text-gray-700">
-                      {payment.linhaDigitavelBoleto}
-                    </p>
-                  </div>
-
-                  {payment.pdfBoleto && (
-                    <a
-                      className="btn btn-secondary mt-4 inline-flex w-full justify-center"
-                      href={payment.pdfBoleto}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Abrir boleto
-                    </a>
-                  )}
-                </div>
-              )}
             </div>
+
+            {/* BOLETO */}
+            {payment?.linhaDigitavelBoleto && (
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📄</span>
+                  <h3 className="text-base font-semibold text-gray-900">
+                    Pagamento via Boleto
+                  </h3>
+                </div>
+
+                <p className="mt-3 text-sm text-gray-600">Linha digitável:</p>
+
+                <div className="mt-2 rounded-xl border border-gray-200 bg-white p-4">
+                  <p className="break-all text-sm text-gray-700">
+                    {payment.linhaDigitavelBoleto}
+                  </p>
+                </div>
+
+                {payment.pdfBoleto && (
+                  <a
+                    className="btn btn-secondary mt-4 inline-flex w-full justify-center"
+                    href={payment.pdfBoleto}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Abrir boleto
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Dados do pagamento */}
+            {payment?.id && (
+              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                <p className="text-xs text-gray-500">
+                  Identificador do pagamento
+                </p>
+                <p className="mt-1 font-mono text-sm text-gray-700">
+                  {payment.id}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
